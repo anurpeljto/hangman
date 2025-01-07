@@ -234,3 +234,15 @@ fn view_scoreboard() {
     let scoreboard = Scoreboard::load();
     scoreboard.display();
 }
+
+fn get_input(prompt: &str) -> String {
+    print!("{}", prompt);
+    io::stdout().flush().unwrap();
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).expect("Failed to read input");
+    input.trim().to_string()
+}
+
+fn get_input_hidden() -> String {
+    rpassword::read_password().expect("Failed to read input")
+}
