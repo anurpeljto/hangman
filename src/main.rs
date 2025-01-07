@@ -151,3 +151,76 @@ fn load_game() {
         Err(_) => println!("{}", "No save file found. Starting a new game.".red()),
     }
 }
+
+fn play_game(mut state: GameState) {
+    loop {
+        println!("\nCurrent word: {}", state.placeholder);
+        println!("Lives remaining: {}", state.lives.to_string().red());
+        println!("Guessed letters: {:?}", state.guessed_letters);
+
+        let current_player = if state.is_player1_choosing {
+            state.player2.clone().unwrap_or_else(|| state.player1.clone())
+        } else {
+            if state.turn == 1 {
+                state.player1.clone()
+            } else {
+                state.player2.clone().unwrap_or_else(|| state.player1.clone())
+            }
+        };
+
+        println!("{}", format!("It's {}'s turn.", current_player).green());
+
+        let guess = get_input("Guess a letter (or type :save to save and quit): ");
+
+        if guess == ":save" {
+            save_game(&state);
+            println!("{}", "Game saved. Exiting...".blue());
+            break;
+        }
+
+        if let Some(c) = guess.chars().next() {
+            if state.guessed_letters.contains(&c) {
+                println!("{}", "You already guessed that letter. Try again.".yellow());
+                continue;
+            }
+
+            state.guessed_letters.insert(c);
+
+            if state.chosen_word.contains(c) {
+                state.correct_letters.insert(c);
+                println!("{}", "Correct guess!".green());
+
+                state.placeholder = state
+                    .chosen_word
+                    .chars()
+                    .map(|ch| if state.correct_letters.contains(&ch) { ch } else { '_' })
+                    .collect();
+
+                if state.placeholder == state.chosen_word {
+                    println!("{}", format!("The word was: {}. {} wins!", state.chosen_word, current_player).green());
+
+                    let mut scoreboard = Scoreboard::load();
+                    scoreboard.update(&current_player);
+                    break;
+                }
+            } else {
+                state.lives -= 1;
+                println!("{}", "Incorrect guess!".red());
+                println!("{}", STAGES[6 - state.lives]);
+
+                if state.lives == 0 {
+                    println!("{}", format!("Game over! The word was: {}", state.chosen_word).red());
+                    let mut scoreboard = Scoreboard::load();
+                    scoreboard.update_lost(&current_player);
+                    break;
+                }
+            }
+
+            if state.is_player1_choosing {
+                continue;
+            }
+
+            state.turn = if state.turn == 1 { 2 } else { 1 };
+        }
+    }
+}
