@@ -224,3 +224,13 @@ fn play_game(mut state: GameState) {
         }
     }
 }
+
+fn save_game(state: &GameState) {
+    let data = serde_json::to_string(state).expect("Failed to serialize game state.");
+    fs::write("save.json", data).expect("Failed to save game state.");
+}
+
+fn view_scoreboard() {
+    let scoreboard = Scoreboard::load();
+    scoreboard.display();
+}
